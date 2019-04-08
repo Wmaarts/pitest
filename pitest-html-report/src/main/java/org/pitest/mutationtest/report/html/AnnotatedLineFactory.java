@@ -14,6 +14,12 @@
  */
 package org.pitest.mutationtest.report.html;
 
+import org.pitest.classinfo.ClassInfo;
+import org.pitest.coverage.ClassLine;
+import org.pitest.coverage.CoverageDatabase;
+import org.pitest.functional.FCollection;
+import org.pitest.mutationtest.MutationResult;
+
 import java.io.IOException;
 import java.io.Reader;
 import java.util.Collection;
@@ -22,21 +28,13 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import org.pitest.classinfo.ClassInfo;
-import org.pitest.coverage.ClassLine;
-import org.pitest.coverage.CoverageDatabase;
-import org.pitest.functional.FCollection;
-import org.pitest.mutationtest.MutationResult;
-import org.pitest.util.StringUtil;
-
 public class AnnotatedLineFactory {
 
-  private final Collection<MutationResult>         mutations;
-  private final CoverageDatabase                   statistics;
-  private final Collection<ClassInfo>              classesInFile;
+  private final Collection<MutationResult> mutations;
+  private final CoverageDatabase           statistics;
+  private final Collection<ClassInfo>      classesInFile;
 
-  public AnnotatedLineFactory(
-      final Collection<MutationResult> mutations,
+  public AnnotatedLineFactory(final Collection<MutationResult> mutations,
       final CoverageDatabase statistics, final Collection<ClassInfo> classes) {
     this.mutations = mutations;
     this.statistics = statistics;
@@ -58,9 +56,8 @@ public class AnnotatedLineFactory {
 
       @Override
       public Line apply(final String a) {
-        final Line l = new Line(this.lineNumber,
-            StringUtil.escapeBasicHtmlChars(a), lineCovered(this.lineNumber),
-            getMutationsForLine(this.lineNumber));
+        final Line l = new Line(this.lineNumber, a,
+            lineCovered(this.lineNumber), getMutationsForLine(this.lineNumber));
         this.lineNumber++;
         return l;
       }
@@ -69,8 +66,7 @@ public class AnnotatedLineFactory {
   }
 
   private List<MutationResult> getMutationsForLine(final int lineNumber) {
-    return this.mutations.stream()
-        .filter(isAtLineNumber(lineNumber))
+    return this.mutations.stream().filter(isAtLineNumber(lineNumber))
         .collect(Collectors.toList());
   }
 
@@ -96,8 +92,9 @@ public class AnnotatedLineFactory {
   }
 
   private boolean isLineCovered(final int line) {
-    final Predicate<ClassInfo> predicate = a -> !AnnotatedLineFactory.this.statistics.getTestsForClassLine(
-        new ClassLine(a.getName().asInternalName(), line)).isEmpty();
+    final Predicate<ClassInfo> predicate = a -> !AnnotatedLineFactory.this.statistics
+        .getTestsForClassLine(new ClassLine(a.getName().asInternalName(), line))
+        .isEmpty();
     return FCollection.contains(this.classesInFile, predicate);
 
   }

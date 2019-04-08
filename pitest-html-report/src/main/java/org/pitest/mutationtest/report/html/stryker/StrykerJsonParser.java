@@ -1,6 +1,7 @@
 package org.pitest.mutationtest.report.html.stryker;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import org.pitest.classinfo.ClassInfo;
 import org.pitest.coverage.CoverageDatabase;
 import org.pitest.functional.FCollection;
@@ -34,11 +35,11 @@ public class StrykerJsonParser {
   private final Map<String, StrykerFile> collectedStrykerFiles = new HashMap<>();
   private final Set<MutationIdentifier>  parsedMutations       = new HashSet<>();
 
-  private final Gson gson = new Gson();
+  private final Gson gson = new GsonBuilder().disableHtmlEscaping().create();
 
   public String getJson() throws IOException {
     StrykerReport report = new StrykerReport(collectedStrykerFiles);
-    return gson.toJson(report);
+    return gson.toJson(report, StrykerReport.class);
 
     //    final String beginJson =
     //        "{" + "\"schemaVersion\": \"1\"," + "\"thresholds\": {"
@@ -84,10 +85,13 @@ public class StrykerJsonParser {
       final String source = this.parseLinesToString(lines);
       if (!source.isEmpty()) {
         // Step 3: Add mutations to file
-        if (this.collectedStrykerFiles.get(data.getFileName()) == null) {
-          this.collectedStrykerFiles.put(data.getFileName(), new StrykerFile());
+        final String fullPath =
+            data.getPackageName().replaceAll("\\.", "/") + "/" + data
+                .getFileName();
+        if (this.collectedStrykerFiles.get(fullPath) == null) {
+          this.collectedStrykerFiles.put(fullPath, new StrykerFile());
         }
-        StrykerFile file = this.collectedStrykerFiles.get(data.getFileName());
+        StrykerFile file = this.collectedStrykerFiles.get(fullPath);
         file.addMutants(strykerMutants);
         file.addSource(source);
       }

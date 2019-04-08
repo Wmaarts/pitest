@@ -14,12 +14,12 @@
  */
 package org.pitest.mutationtest.report.html;
 
-import java.util.Collections;
-import java.util.List;
-
-import java.util.Optional;
 import org.pitest.mutationtest.DetectionStatus;
 import org.pitest.mutationtest.MutationResult;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 
 public class Line {
   private final long                 number;
