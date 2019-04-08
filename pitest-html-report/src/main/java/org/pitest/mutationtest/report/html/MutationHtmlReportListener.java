@@ -14,10 +14,7 @@
  */
 package org.pitest.mutationtest.report.html;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.Reader;
-import java.io.Writer;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -37,10 +34,8 @@ import java.util.Optional;
 import org.pitest.mutationtest.ClassMutationResults;
 import org.pitest.mutationtest.MutationResultListener;
 import org.pitest.mutationtest.SourceLocator;
-import org.pitest.util.FileUtil;
-import org.pitest.util.IsolationUtils;
-import org.pitest.util.Log;
-import org.pitest.util.ResultOutputStrategy;
+import org.pitest.mutationtest.report.html.stryker.StrykerJsonParser;
+import org.pitest.util.*;
 
 public class MutationHtmlReportListener implements MutationResultListener {
 
@@ -49,6 +44,7 @@ public class MutationHtmlReportListener implements MutationResultListener {
   private final Collection<SourceLocator> sourceRoots;
 
   private final PackageSummaryMap         packageSummaryData = new PackageSummaryMap();
+  private final StrykerJsonParser strykerJsonParser;
   private final CoverageDatabase          coverage;
   private final Set<String>               mutatorNames;
 
@@ -60,6 +56,7 @@ public class MutationHtmlReportListener implements MutationResultListener {
     this.coverage = coverage;
     this.outputStrategy = outputStrategy;
     this.sourceRoots = new HashSet<>(Arrays.asList(locators));
+    this.strykerJsonParser = new StrykerJsonParser(this.sourceRoots, this.coverage);
     this.mutatorNames = new HashSet<>(mutatorNames);
     this.css = loadCss();
   }
@@ -74,9 +71,31 @@ public class MutationHtmlReportListener implements MutationResultListener {
     return "";
   }
 
+  private String loadStrykerHtml() {
+    final String startHtml = "<!DOCTYPE html>\n" +
+            "<html>\n" +
+            "<body>\n" +
+            "  <mutation-test-report-app title-postfix=\"Stryker4s report\">\n" +
+            "    Your browser doesn't support <a href=\"https://caniuse.com/#search=custom%20elements\">custom elements</a>.\n" +
+            "    Please use a latest version of an evergreen browser (Firefox, Chrome, Safari, Opera, etc).\n" +
+            "  </mutation-test-report-app>\n" +
+            "  <script src=\"report.js\"></script>\n" +
+            "  <script>";
+    final String endHtml = "  </script>\n" +
+            "</body>\n" +
+            "</html>";
+    try {
+      return startHtml + FileUtil.readToString(IsolationUtils.getContextClassLoader()
+              .getResourceAsStream("templates/mutation/mutation-test-elements.js"))
+              + endHtml;
+    } catch (final IOException e) {
+      Log.getLogger().log(Level.SEVERE, "Error while loading css", e);
+    }
+    return "";
+  }
+
   private void generateAnnotatedSourceFile(
       final MutationTestSummaryData mutationMetaData) {
-
 
     final String fileName = mutationMetaData.getPackageName()
         + File.separator + mutationMetaData.getFileName() + ".html";
@@ -187,6 +206,26 @@ public class MutationHtmlReportListener implements MutationResultListener {
     }
   }
 
+  private void createStrykerHtml(String content) {
+    final Writer strykerWriter = this.outputStrategy.createWriterForFile("index2.html");
+    try {
+      strykerWriter.write(content);
+      strykerWriter.close();
+    } catch (final IOException e) {
+      e.printStackTrace();
+    }
+  }
+
+  private void createStrykerJs(String content) {
+    final Writer strykerWriter = this.outputStrategy.createWriterForFile("report.js");
+    try {
+      strykerWriter.write(content);
+      strykerWriter.close();
+    } catch (final IOException e) {
+      e.printStackTrace();
+    }
+  }
+
   private void createIndexPages() {
 
     final StringTemplateGroup group = new StringTemplateGroup("mutation_test");
@@ -229,23 +268,34 @@ public class MutationHtmlReportListener implements MutationResultListener {
     } catch (final IOException e) {
       e.printStackTrace();
     }
-
   }
 
   @Override
   public void runStart() {
     // TODO Auto-generated method stub
-
   }
 
   @Override
   public void runEnd() {
-    createIndexPages();
-    createCssFile();
+    System.out.println("Klaar met HTML report");
+
+    createStrykerHtml(loadStrykerHtml());
+
+    try {
+      String json = strykerJsonParser.getJson();
+      createStrykerJs("document.querySelector('mutation-test-report-app').report = " + json);
+    } catch (final IOException e) {
+      e.printStackTrace();
+    }
+//    createIndexPages();
+//    createCssFile();
   }
 
   @Override
   public void handleMutationResult(final ClassMutationResults metaData) {
+    // Stryker addition
+    strykerJsonParser.addMutationResult(metaData);
+
     final PackageSummaryData packageData = collectPackageSummaries(metaData);
 
     generateAnnotatedSourceFile(packageData.getForSourceFile(metaData

@@ -50,7 +50,6 @@ public class AnnotatedLineFactory {
     } finally {
       source.close();
     }
-
   }
 
   private Function<String, Line> stringToAnnotatedLine() {
