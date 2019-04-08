@@ -1,10 +1,6 @@
 package org.pitest.mutationtest.report.html;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class PackageSummaryData implements Comparable<PackageSummaryData> {
 
@@ -23,7 +19,10 @@ public class PackageSummaryData implements Comparable<PackageSummaryData> {
     } else {
       existing.add(data);
     }
+  }
 
+  public Set<String> getSourceFiles(){
+    return fileNameToSummaryData.keySet();
   }
 
   public MutationTestSummaryData getForSourceFile(final String filename) {

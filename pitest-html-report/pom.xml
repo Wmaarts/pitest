@@ -102,6 +102,12 @@
 			<scope>test</scope>
 		</dependency>
 
+		<!-- STRYKER DEPENDENCIES -->
+		<dependency>
+			<groupId>com.google.code.gson</groupId>
+			<artifactId>gson</artifactId>
+			<version>2.6.2</version>
+		</dependency>
 
 	</dependencies>
 

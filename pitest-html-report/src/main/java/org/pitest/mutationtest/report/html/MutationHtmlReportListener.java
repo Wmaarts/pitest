@@ -112,7 +112,6 @@ public class MutationHtmlReportListener implements MutationResultListener {
       st.setAttribute("mutators", mutationMetaData.getMutators());
 
       final SourceFile sourceFile = createAnnotatedSourceFile(mutationMetaData);
-
       st.setAttribute("sourceFile", sourceFile);
       st.setAttribute("mutatedClasses", mutationMetaData.getMutatedClasses());
 
@@ -277,8 +276,7 @@ public class MutationHtmlReportListener implements MutationResultListener {
 
   @Override
   public void runEnd() {
-    System.out.println("Klaar met HTML report");
-
+    System.out.println("Klaar voor HTML report");
     createStrykerHtml(loadStrykerHtml());
 
     try {
@@ -287,16 +285,21 @@ public class MutationHtmlReportListener implements MutationResultListener {
     } catch (final IOException e) {
       e.printStackTrace();
     }
-//    createIndexPages();
-//    createCssFile();
+    System.out.println("Klaar met HTML report");
+    createIndexPages();
+    createCssFile();
   }
 
   @Override
   public void handleMutationResult(final ClassMutationResults metaData) {
-    // Stryker addition
-    strykerJsonParser.addMutationResult(metaData);
-
     final PackageSummaryData packageData = collectPackageSummaries(metaData);
+
+    // Stryker addition
+    try {
+      strykerJsonParser.addPackageSummaryData(packageData);
+    } catch(Exception e){
+      e.printStackTrace();
+    }
 
     generateAnnotatedSourceFile(packageData.getForSourceFile(metaData
         .getFileName()));
