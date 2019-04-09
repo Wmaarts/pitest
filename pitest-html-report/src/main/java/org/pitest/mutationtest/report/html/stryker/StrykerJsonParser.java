@@ -37,7 +37,6 @@ public class StrykerJsonParser {
     StrykerReport report = new StrykerReport(collectedStrykerFiles);
     return gson.toJson(report, StrykerReport.class);
   }
-  int i = 0;
 
   private void addToStrykerFiles(
       final Map<String, StrykerFile> collectedStrykerFiles,
@@ -48,7 +47,6 @@ public class StrykerJsonParser {
       final List<StrykerMutant> strykerMutants = new ArrayList<>();
       final List<StrykerLine> lines = getLines(data);
       if (lines.isEmpty()) {
-        i++;
         continue;
       }
       for (final StrykerLine line : lines) {
