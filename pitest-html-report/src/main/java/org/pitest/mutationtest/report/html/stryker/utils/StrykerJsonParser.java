@@ -1,4 +1,4 @@
-package org.pitest.mutationtest.report.html.stryker;
+package org.pitest.mutationtest.report.html.stryker.utils;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -11,7 +11,6 @@ import org.pitest.mutationtest.report.html.stryker.models.StrykerMutationTestSum
 import org.pitest.mutationtest.report.html.stryker.models.StrykerPackageSummaryData;
 import org.pitest.mutationtest.report.html.stryker.models.StrykerPackageSummaryMap;
 import org.pitest.mutationtest.report.html.stryker.models.json.*;
-import org.pitest.mutationtest.report.html.stryker.utils.StrykerLineFactory;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -30,49 +29,55 @@ public class StrykerJsonParser {
       throws IOException {
     final Map<String, StrykerFile> collectedStrykerFiles = new HashMap<>();
 
-    for (StrykerPackageSummaryData data : packageSummaryMap.values()) {
-      this.addToStrykerFiles(collectedStrykerFiles, data);
+    for (StrykerPackageSummaryData packageData : packageSummaryMap.values()) {
+      for (StrykerMutationTestSummaryData testData : packageData
+          .getSummaryData()) {
+        this.addToStrykerFiles(collectedStrykerFiles, testData);
+      }
     }
-
     StrykerReport report = new StrykerReport(collectedStrykerFiles);
     return gson.toJson(report, StrykerReport.class);
   }
 
   private void addToStrykerFiles(
       final Map<String, StrykerFile> collectedStrykerFiles,
-      final StrykerPackageSummaryData packageSummaryData) throws IOException {
-    for (StrykerMutationTestSummaryData data : packageSummaryData
-        .getSummaryData()) {
-      // Step 1: Map mutations to Stryker mutations
-      final List<StrykerMutant> strykerMutants = new ArrayList<>();
-      final List<StrykerLine> lines = getLines(data);
-      if (lines.isEmpty()) {
-        continue;
+      final StrykerMutationTestSummaryData data) throws IOException {
+    // Step 1: Map mutations to lines
+    final List<StrykerLine> lines = this.getLines(data);
+
+    // Step 2: Create or retrieve Stryker file
+    final String fullPath = data.getPackageName() + "/" + data.getFileName();
+    if (collectedStrykerFiles.get(fullPath) == null) {
+      collectedStrykerFiles.put(fullPath, new StrykerFile());
+    }
+    final StrykerFile file = collectedStrykerFiles.get(fullPath);
+
+    // Step 3: Add source and mutants to file
+    file.addSource(this.getSourceFromLines(lines));
+    file.addMutants(this.getMutantsFromLines(lines, data));
+  }
+
+  private List<StrykerMutant> getMutantsFromLines(final List<StrykerLine> lines,
+      final StrykerMutationTestSummaryData data) {
+    final List<StrykerMutant> strykerMutants = new ArrayList<>();
+    if (lines.isEmpty()) {
+      // If there are no lines, add the mutants anyway, without source
+      for (MutationResult mutationResult : data.getResults()) {
+        strykerMutants.add(this.mapPiMutantToStryker(mutationResult, null));
       }
+    } else {
       for (final StrykerLine line : lines) {
         for (MutationResult mutationResult : line.getMutations()) {
           strykerMutants.add(this.mapPiMutantToStryker(mutationResult, line));
         }
       }
-      // Step 2: Check if we can find the source
-      final String source = this.parseLinesToString(lines);
-      if (!source.isEmpty()) {
-        // Step 3: Add mutations to file
-        final String fullPath =
-            data.getPackageName() + "/" + data.getFileName();
-        if (collectedStrykerFiles.get(fullPath) == null) {
-          collectedStrykerFiles.put(fullPath, new StrykerFile());
-        }
-        final StrykerFile file = collectedStrykerFiles.get(fullPath);
-        file.addMutants(strykerMutants);
-        file.addSource(source);
-      }
     }
+    return strykerMutants;
   }
 
-  private String parseLinesToString(final List<StrykerLine> lines) {
+  private String getSourceFromLines(final List<StrykerLine> lines) {
     if (lines.isEmpty()) {
-      return "";
+      return "   ";
     }
     StringBuilder builder = new StringBuilder();
     for (final StrykerLine line : lines) {

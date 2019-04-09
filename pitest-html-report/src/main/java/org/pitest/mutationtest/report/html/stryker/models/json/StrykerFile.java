@@ -31,6 +31,10 @@ public class StrykerFile {
     }
   }
 
+  public List<StrykerMutant> getMutants(){
+    return this.mutants;
+  }
+
   //    public String toJson(){
   //        String startJson = " \"" + this.name + "\": {" +
   //            "     \"source\": \"" + this.source + "\"," +

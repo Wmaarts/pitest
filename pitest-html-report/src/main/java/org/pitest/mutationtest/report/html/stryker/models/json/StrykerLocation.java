@@ -18,9 +18,14 @@ public class StrykerLocation {
   }
 
   public static StrykerLocation ofLine(StrykerLine line) {
-    final LineAndColumn start = new LineAndColumn((int) line.getNumber(), 1);
-    final LineAndColumn end = new LineAndColumn((int) line.getNumber(), line.getText().length());
-    return new StrykerLocation(start, end);
+    if(line == null){
+      return new StrykerLocation(new LineAndColumn(1, 1), new LineAndColumn(1, 2));
+    } else {
+      final LineAndColumn start = new LineAndColumn((int) line.getNumber(), 1);
+      final LineAndColumn end = new LineAndColumn((int) line.getNumber(),
+          line.getText().length());
+      return new StrykerLocation(start, end);
+    }
   }
 }
 

@@ -5,16 +5,18 @@ import org.pitest.mutationtest.ClassMutationResults;
 import org.pitest.mutationtest.MutationResultListener;
 import org.pitest.mutationtest.SourceLocator;
 import org.pitest.mutationtest.report.html.stryker.models.StrykerMutationTestSummaryData;
-import org.pitest.mutationtest.report.html.stryker.models.StrykerPackageSummaryData;
 import org.pitest.mutationtest.report.html.stryker.models.StrykerPackageSummaryMap;
+import org.pitest.mutationtest.report.html.stryker.utils.StrykerJsonParser;
 import org.pitest.util.FileUtil;
-import org.pitest.util.IsolationUtils;
 import org.pitest.util.Log;
 import org.pitest.util.ResultOutputStrategy;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.Writer;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.logging.Level;
 
 public class MutationStrykerReportListener implements MutationResultListener {
@@ -25,14 +27,11 @@ public class MutationStrykerReportListener implements MutationResultListener {
 
   private final CoverageDatabase         coverage;
   private final StrykerPackageSummaryMap packageSummaryData = new StrykerPackageSummaryMap();
-  private final Set<String>              mutatorNames;
 
   public MutationStrykerReportListener(final CoverageDatabase coverage,
-      final ResultOutputStrategy outputStrategy,
-      Collection<String> mutatorNames, final SourceLocator... locators) {
+      final ResultOutputStrategy outputStrategy, final SourceLocator... locators) {
     this.coverage = coverage;
     this.outputStrategy = outputStrategy;
-    this.mutatorNames = new HashSet<>(mutatorNames);
     this.strykerJsonParser = new StrykerJsonParser(
         new HashSet<>(Arrays.asList(locators)));
   }
@@ -46,9 +45,11 @@ public class MutationStrykerReportListener implements MutationResultListener {
         + "  <script src=\"report.js\"></script>\n" + "  <script>";
     final String endHtml = "  </script>\n" + "</body>\n" + "</html>";
     try {
-      return startHtml + FileUtil.readToString(
-          IsolationUtils.getContextClassLoader().getResourceAsStream(
-              "templates/mutation/mutation-test-elements.js")) + endHtml;
+      final String reportVersion = "1.0.2";
+      final String htmlReportResource =
+          "META-INF/resources/webjars/mutation-testing-elements/" + reportVersion + "/dist/mutation-test-elements.js";
+      final InputStream inputStream = this.getClass().getClassLoader().getResourceAsStream(htmlReportResource);
+      return startHtml + FileUtil.readToString(inputStream) + endHtml;
     } catch (final IOException e) {
       Log.getLogger().log(Level.SEVERE, "Error while loading css", e);
     }
@@ -86,11 +87,11 @@ public class MutationStrykerReportListener implements MutationResultListener {
         data.getMutations(), coverage.getClassInfo(Collections.singleton(data.getMutatedClass())));
   }
 
-  private StrykerPackageSummaryData updatePackageSummary(
+  private void updatePackageSummary(
       final ClassMutationResults mutationMetaData) {
     final String packageName = mutationMetaData.getPackageName();
 
-    return this.packageSummaryData.update(packageName,
+    this.packageSummaryData.update(packageName,
         createSummaryData(this.coverage, mutationMetaData));
   }
 
