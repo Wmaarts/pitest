@@ -1,4 +1,4 @@
-package org.pitest.mutationtest.report.html.stryker.models;
+package org.pitest.mutationtest.report.html.stryker.models.json;
 
 import java.util.Map;
 

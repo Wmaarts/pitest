@@ -1,4 +1,4 @@
-package org.pitest.mutationtest.report.html.stryker.models;
+package org.pitest.mutationtest.report.html.stryker.models.json;
 
 import com.google.gson.annotations.Expose;
 

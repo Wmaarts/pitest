@@ -1,6 +1,6 @@
-package org.pitest.mutationtest.report.html.stryker.models;
+package org.pitest.mutationtest.report.html.stryker.models.json;
 
-import org.pitest.mutationtest.report.html.Line;
+import org.pitest.mutationtest.report.html.stryker.models.StrykerLine;
 
 public class StrykerLocation {
   private LineAndColumn start, end;
@@ -17,7 +17,7 @@ public class StrykerLocation {
         + this.start.column + " " + " }";
   }
 
-  public static StrykerLocation ofLine(Line line) {
+  public static StrykerLocation ofLine(StrykerLine line) {
     final LineAndColumn start = new LineAndColumn((int) line.getNumber(), 1);
     final LineAndColumn end = new LineAndColumn((int) line.getNumber(), line.getText().length());
     return new StrykerLocation(start, end);
